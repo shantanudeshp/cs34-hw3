@@ -10,16 +10,17 @@ endif
 CXXFLAGS = -std=c++17 -fprofile-arcs -ftest-coverage -I include $(EXTRA_INC)
 LDFLAGS = -lgtest -lgtest_main -lpthread -fprofile-arcs -ftest-coverage $(EXTRA_LIB)
 
+
 .PHONY: all test coverage clean dirs
 
-test: dirs testbin/teststrutils testbin/teststrdatasource testbin/teststrdatasink testbin/testdsv testbin/testxml testbin/testcsvbs testbin/testosm
-	./testbin/teststrutils
-	./testbin/teststrdatasource
-	./testbin/teststrdatasink
-	./testbin/testdsv
-	./testbin/testxml
-	./testbin/testcsvbs
-	./testbin/testosm
+test: dirs bin/teststrutils bin/teststrdatasource bin/teststrdatasink bin/testdsv bin/testxml bin/testcsvbs bin/testosm
+	./bin/teststrutils
+	./bin/teststrdatasource
+	./bin/teststrdatasink
+	./bin/testdsv
+	./bin/testxml
+	./bin/testcsvbs
+	./bin/testosm
 
 all: test
 
@@ -37,32 +38,32 @@ obj/%.o: src/%.cpp | obj
 testobj/%.o: testsrc/%.cpp | testobj
 	$(CXX) $(CXXFLAGS) -c $< -o $@
 
-testbin/teststrutils: obj/StringUtils.o testobj/StringUtilsTest.o
+bin/teststrutils: obj/StringUtils.o testobj/StringUtilsTest.o
 	$(CXX) $^ $(LDFLAGS) -o $@
 
-testbin/teststrdatasource: obj/StringDataSource.o testobj/StringDataSourceTest.o
+bin/teststrdatasource: obj/StringDataSource.o testobj/StringDataSourceTest.o
 	$(CXX) $^ $(LDFLAGS) -o $@
 
-testbin/teststrdatasink: obj/StringDataSink.o testobj/StringDataSinkTest.o
+bin/teststrdatasink: obj/StringDataSink.o testobj/StringDataSinkTest.o
 	$(CXX) $^ $(LDFLAGS) -o $@
 
-testbin/testdsv: obj/DSVReader.o obj/DSVWriter.o obj/StringDataSource.o obj/StringDataSink.o testobj/DSVTest.o
+bin/testdsv: obj/DSVReader.o obj/DSVWriter.o obj/StringDataSource.o obj/StringDataSink.o testobj/DSVTest.o
 	$(CXX) $^ $(LDFLAGS) -o $@
 
-testbin/testxml: obj/XMLReader.o obj/XMLWriter.o obj/StringDataSource.o obj/StringDataSink.o testobj/XMLTest.o
+bin/testxml: obj/XMLReader.o obj/XMLWriter.o obj/StringDataSource.o obj/StringDataSink.o testobj/XMLTest.o
 	$(CXX) $^ $(LDFLAGS) -lexpat -o $@
 
-testbin/testcsvbs: obj/CSVBusSystem.o obj/DSVReader.o obj/StringDataSource.o obj/StringDataSink.o testobj/CSVBusSystemTest.o
+bin/testcsvbs: obj/CSVBusSystem.o obj/DSVReader.o obj/StringDataSource.o obj/StringDataSink.o testobj/CSVBusSystemTest.o
 	$(CXX) $^ $(LDFLAGS) -o $@
 
-testbin/testosm: obj/OpenStreetMap.o obj/XMLReader.o obj/StringDataSource.o obj/StringDataSink.o testobj/OpenStreetMapTest.o
+bin/testosm: obj/OpenStreetMap.o obj/XMLReader.o obj/StringDataSource.o obj/StringDataSink.o testobj/OpenStreetMapTest.o
 	$(CXX) $^ $(LDFLAGS) -lexpat -o $@
 
-obj testobj testbin bin lib htmlcov:
+obj testobj bin lib htmlcov:
 	mkdir -p $@
 
 dirs:
-	mkdir -p bin htmlcov lib obj testbin testobj
+	mkdir -p bin htmlcov lib obj testobj
 
 clean:
-	rm -rf bin htmlcov lib obj testbin testobj *.gcda *.gcno *.info *.gcov
+	rm -rf bin htmlcov lib obj testobj *.gcda *.gcno *.info *.gcov
