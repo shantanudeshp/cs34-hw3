@@ -7,16 +7,19 @@ EXTRA_INC = -I /opt/homebrew/include -I /opt/homebrew/opt/expat/include
 EXTRA_LIB = -L /opt/homebrew/lib -L /opt/homebrew/opt/expat/lib
 endif
 
-CXXFLAGS = -std=c++20 -fprofile-arcs -ftest-coverage -I include $(EXTRA_INC)
+CXXFLAGS = -std=c++17 -fprofile-arcs -ftest-coverage -I include $(EXTRA_INC)
 LDFLAGS = -lgtest -lgtest_main -lpthread -fprofile-arcs -ftest-coverage $(EXTRA_LIB)
 
 .PHONY: all test coverage clean dirs
 
-test: dirs testbin/teststrdatasource testbin/teststrdatasink testbin/testcsvbussystem testbin/testopenstreetmap
-	@./testbin/teststrdatasource --gtest_brief=1 2>&1 | egrep '\[  (PASSED|FAILED)  \]'
-	@./testbin/teststrdatasink --gtest_brief=1 2>&1 | egrep '\[  (PASSED|FAILED)  \]'
-	@./testbin/testcsvbussystem --gtest_brief=1 2>&1 | egrep '\[  (PASSED|FAILED)  \]'
-	@./testbin/testopenstreetmap --gtest_brief=1 2>&1 | egrep '\[  (PASSED|FAILED)  \]'
+test: dirs testbin/teststrutils testbin/teststrdatasource testbin/teststrdatasink testbin/testdsv testbin/testxml testbin/testcsvbs testbin/testosm
+	./testbin/teststrutils
+	./testbin/teststrdatasource
+	./testbin/teststrdatasink
+	./testbin/testdsv
+	./testbin/testxml
+	./testbin/testcsvbs
+	./testbin/testosm
 
 all: test
 
@@ -29,28 +32,37 @@ coverage: test
 		--ignore-errors inconsistent,corrupt,unsupported,category >/dev/null 2>&1 || true
 
 obj/%.o: src/%.cpp | obj
-	@$(CXX) $(CXXFLAGS) -c $< -o $@
+	$(CXX) $(CXXFLAGS) -c $< -o $@
 
 testobj/%.o: testsrc/%.cpp | testobj
-	@$(CXX) $(CXXFLAGS) -c $< -o $@
+	$(CXX) $(CXXFLAGS) -c $< -o $@
+
+testbin/teststrutils: obj/StringUtils.o testobj/StringUtilsTest.o
+	$(CXX) $^ $(LDFLAGS) -o $@
 
 testbin/teststrdatasource: obj/StringDataSource.o testobj/StringDataSourceTest.o
-	@$(CXX) $^ $(LDFLAGS) -o $@
+	$(CXX) $^ $(LDFLAGS) -o $@
 
 testbin/teststrdatasink: obj/StringDataSink.o testobj/StringDataSinkTest.o
-	@$(CXX) $^ $(LDFLAGS) -o $@
+	$(CXX) $^ $(LDFLAGS) -o $@
 
-testbin/testcsvbussystem: obj/CSVBusSystem.o obj/DSVReader.o obj/StringDataSource.o obj/StringDataSink.o testobj/CSVBusSystemTest.o
-	@$(CXX) $^ $(LDFLAGS) -o $@
+testbin/testdsv: obj/DSVReader.o obj/DSVWriter.o obj/StringDataSource.o obj/StringDataSink.o testobj/DSVTest.o
+	$(CXX) $^ $(LDFLAGS) -o $@
 
-testbin/testopenstreetmap: obj/OpenStreetMap.o obj/XMLReader.o obj/StringDataSource.o obj/StringDataSink.o testobj/OpenStreetMapTest.o
-	@$(CXX) $^ $(LDFLAGS) -lexpat -o $@
+testbin/testxml: obj/XMLReader.o obj/XMLWriter.o obj/StringDataSource.o obj/StringDataSink.o testobj/XMLTest.o
+	$(CXX) $^ $(LDFLAGS) -lexpat -o $@
+
+testbin/testcsvbs: obj/CSVBusSystem.o obj/DSVReader.o obj/StringDataSource.o obj/StringDataSink.o testobj/CSVBusSystemTest.o
+	$(CXX) $^ $(LDFLAGS) -o $@
+
+testbin/testosm: obj/OpenStreetMap.o obj/XMLReader.o obj/StringDataSource.o obj/StringDataSink.o testobj/OpenStreetMapTest.o
+	$(CXX) $^ $(LDFLAGS) -lexpat -o $@
 
 obj testobj testbin bin lib htmlcov:
-	@mkdir -p $@
+	mkdir -p $@
 
 dirs:
-	@mkdir -p bin htmlcov lib obj testbin testobj
+	mkdir -p bin htmlcov lib obj testbin testobj
 
 clean:
-	@rm -rf bin htmlcov lib obj testbin testobj *.gcda *.gcno *.info *.gcov
+	rm -rf bin htmlcov lib obj testbin testobj *.gcda *.gcno *.info *.gcov
