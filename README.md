@@ -182,3 +182,68 @@ make clean  # removes all build artifacts
 **Rationale:** AI explained the ODR issue clearly; using numeric_limits directly avoids the problem since it's a function call rather than an ODR-use of a static member.
 
 ---
+
+### 13. Makefile Structure for Multiple Test Executables
+
+**Prompt:** "How do I extend my existing Makefile to support new test executables for CCSVBusSystem and COpenStreetMap, where each needs different object file dependencies?"
+
+**Original AI Response:**
+"Add a new test executable target for each class following the same pattern as your existing targets. For CCSVBusSystem, link together the CSVBusSystem object, DSVReader object, StringDataSource, StringDataSink, and the test object file. For COpenStreetMap, link XMLReader, OpenStreetMap, StringDataSource, StringDataSink, and the test object, and add -lexpat since XMLReader depends on it. Add both new executables to your test target dependencies and add their run commands. The pattern rules for obj/%.o and testobj/%.o already handle compilation automatically, so you only need the new link targets."
+
+**Changes Made:** Added testbin/testcsvbs and testbin/testosm as new link targets with their correct object dependencies. Linked -lexpat only for the OpenStreetMap test since XMLReader depends on Expat. Updated the test target dependency list and added run commands for both executables. Verified that the existing pattern rules automatically compiled new .cpp files without modification.
+
+**Rationale:** ChatGPT clarified that the existing pattern rules already handled compilation, so only new link targets and dependency wiring were required. I verified object dependencies manually by tracing header includes and ensuring only the XML-based target required -lexpat.
+
+---
+
+### 14. Fixing Static Constant Linker Error
+
+**Prompt:** ""Why am I getting an undefined symbol error for CStreetMap::InvalidNodeID during linking, even though it is declared in the header?"
+
+**Original AI Response:**
+"The error occurs because static const integral members require an out-of-class definition unless declared constexpr. Since InvalidNodeID and InvalidWayID are used in a way that triggers ODR-use, the linker expects a definition. Changing them to static constexpr ensures the compiler treats them as inline constants and eliminates the linker error."
+
+**Changes Made:** Modified include/StreetMap.h to change static const to static constexpr for both InvalidNodeID and InvalidWayID.
+
+**Rationale:** AI identified that the issue was due to ODR-use of static constants. Converting them to constexpr resolved the linker error without requiring separate definitions.
+
+---
+
+### 15. NImplementing COpenStreetMap Using PImpl Pattern
+
+**Prompt:** "How should I structure COpenStreetMap to store nodes and ways efficiently while supporting both index-based and ID-based lookup?"
+
+**Original AI Response:**
+"Use a PImpl pattern with an internal SImplementation struct. Store nodes and ways in vectors to preserve insertion order, and use unordered_maps mapping IDs to vector indices for O(1) lookup by ID. Store attributes in both a vector (to preserve insertion order for GetAttributeKey) and an unordered_map (for fast HasAttribute/GetAttribute lookup)."
+
+**Changes Made:** Implemented COpenStreetMap using a SImplementation struct containing vectors for nodes and ways and unordered_maps for ID lookups. Implemented attribute storage using both vector and unordered_map structures.
+
+**Rationale:** AI explained structure ensured efficient lookup while satisfying the assignment requirement to preserve insertion order for attribute key indexing.
+
+---
+
+### 16. Parsing OSM XML with CXMLReader
+
+**Prompt:** "How should I parse <node>, <way>, <tag>, and <nd> elements using CXMLReader to build the OpenStreetMap data structure?"
+
+**Original AI Response:**
+"Read XML entities in a loop using ReadEntity. When encountering a <node> or <way> start element, construct the corresponding object. For nodes, extract id, lat, lon, and parse child <tag> elements. For ways, extract id, parse child <nd ref> elements for node references, and parse child <tag> elements for attributes. Stop parsing when the corresponding end element is reached."
+
+**Changes Made:** Implemented entity parsing in the constructor of COpenStreetMap. Added logic to detect StartElement and CompleteElement types, extract attributes, handle nested tags, and terminate parsing correctly at matching EndElement.
+
+**Rationale:** The AI clarified how to correctly traverse XML entities using the provided reader abstraction rather than relying on raw XML parsing logic.
+
+---
+
+### 16. Writing GoogleTests for OpenStreetMap
+
+**Prompt:** "What tests should I write to properly validate my COpenStreetMap implementation?"
+
+**Original AI Response:**
+"Write tests using in-memory XML strings via CStringDataSource. Validate NodeCount and WayCount, lookup by index and ID, attribute retrieval, missing attribute behavior, out-of-range index behavior, and correct node reference ordering in ways. Ensure sentinel values (nullptr and InvalidNodeID) are tested."
+
+**Changes Made:** Created OpenStreetMapTest.cpp with multiple test cases verifying node counts, way counts, attribute handling, out-of-range access, ID lookups, and node reference ordering.
+
+**Rationale:** AI identified required edge cases and sentinel behaviors that align with the interface specification and grading expectations.
+
+---
